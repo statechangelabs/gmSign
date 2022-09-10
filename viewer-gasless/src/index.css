@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Devanagari:wght@400;500;700&display=swap");
+
+.container-narrow {
+  @apply max-w-4xl mx-auto;
+}
+
+.btn {
+  @apply font-medium px-5 py-2;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-primary-default to-teal-dark text-white;
+}
+
+.btn-primary:hover {
+  @apply from-teal-dark to-primary-default;
+}
+
+.btn-primary:disabled {
+  @apply pointer-events-none opacity-50;
+}
+
+.btn-gradient {
+  border-style: solid;
+  border-image-slice: 1;
+  border-width: 2px;
+  border-image-source: linear-gradient(120deg, #00e2b7, #009377);
+}
+
+.btn-gradient:hover {
+  border-image-source: linear-gradient(120deg, #009377, #00e2b7);
+}
+
+.doc-shadow {
+  box-shadow: 0px 5.4px 5.3px rgba(0, 0, 0, 0.02),
+    0px 18.1px 17.9px rgba(0, 0, 0, 0.03), 0px 81px 80px rgba(0, 0, 0, 0.05);
+}
+
+.scrollable::-webkit-scrollbar {
+  width: 0.75em;
+}
+
+.scrollable::-webkit-scrollbar-track {
+  background: white;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  @apply bg-gray-200 rounded-full border-4 border-solid border-white;
+}
+
+.h2 {
+  @apply text-4xl lg:text-5xl font-semibold;
+}
