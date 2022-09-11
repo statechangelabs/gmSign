@@ -46,6 +46,7 @@ function App() {
           contractAddress={contractAddress}
           documentId={documentId}
           tokenId={tokenId}
+          chainId={chainId}
         />
       </MetamaskConnected>
       <ToastContainer />
