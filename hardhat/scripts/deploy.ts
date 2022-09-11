@@ -22,7 +22,7 @@ async function main() {
       const result = spawnSync(commandLine, { stdio: "inherit", shell: true });
       if (result.status) {
         //check the output
-        if (result.stderr.includes("does not have bytecode")) {
+        if (result.stderr && result.stderr.includes("does not have bytecode")) {
           //Patience, grasshopper
           console.log("Hit a failure with message", result.stderr);
           attempts++;

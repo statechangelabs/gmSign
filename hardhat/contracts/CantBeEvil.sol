@@ -67,7 +67,7 @@ contract NonEvilToken is ERC721, Ownable, CantBeEvil, TermsableNoToken {
     function acceptTermsFor(
         address _signer,
         string memory _signatureUrl,
-        bytes memory
+        bytes memory _UNUSED // We ignore unused atm
     ) external override onlyMetaSigner {
         //bytes32 hash = ECDSA.toEthSignedMessageHash(bytes(_json));
         // address _checkedSigner = ECDSA.recover(hash, _signature);
