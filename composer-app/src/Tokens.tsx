@@ -94,7 +94,7 @@ const Tokens: FC = () => {
               onSubmit={async (values, { setSubmitting }) => {
                 const description = values.description.replace(
                   "[POLYDOCS]",
-                  `https://sign.polydocs.xyz/#/redirect::${chainId}::${contractAddress}`
+                  `https://sign.gmsign.xyz/#/redirect::${chainId}::${contractAddress}`
                 );
                 console.log("Goody let's mint!!!!", {
                   ...values,

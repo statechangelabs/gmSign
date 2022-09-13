@@ -1,4 +1,4 @@
-# sign.polydocs.xyz dapp
+# sign.gmsign.xyz dapp
 
 WHen deploying on an IPFS-based host, make sure to set PUBLIC_URL env variable to ".". 
 
