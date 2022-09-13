@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import useAsyncEffect from "./useAsyncEffect";
 import { decode, encode } from "base64-arraybuffer";
+import localforage from "localforage";
 let gateway = "https://ipfs.io/ipfs/";
 export const setGateway = (newGateway: string) => {
   gateway = newGateway;
@@ -9,7 +10,7 @@ export const useIPFS = (cid: string | undefined) => {
   const [ipfs, setIPFS] = useState<ArrayBuffer>();
   useAsyncEffect(async () => {
     if (!cid) return;
-    const content64 = localStorage.getItem("ipfs_" + cid);
+    const content64 = await localforage.getItem<string>("ipfs_" + cid);
     if (content64) {
       const content = decode(content64);
       setIPFS(content);
@@ -22,8 +23,10 @@ export const useIPFS = (cid: string | undefined) => {
       try {
         const ab = await content2.arrayBuffer();
         const b64 = encode(ab);
-        localStorage.setItem("ipfs_" + cid, b64);
         setIPFS(ab);
+        try {
+          localforage.setItem("ipfs_" + cid, b64);
+        } catch (e) {}
         console.log("I set the ipfs");
       } catch (e) {
         console.log("I hit an error", e);

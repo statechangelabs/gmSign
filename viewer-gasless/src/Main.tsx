@@ -16,7 +16,7 @@ import { validate } from "email-validator";
 
 const POLYDOCS_URL =
   process.env.REACT_APP_POLYDOCS_URL ??
-  "https://xw8v-tcfi-85ay.n7.xano.io/api:W2GV-aeC/request-signature";
+  "https://xw8v-tcfi-85ay.n7.xano.io/api:W2GV-aeC/signature/request";
 
 export const ethereum = (window as unknown as { ethereum: any }).ethereum;
 export const provider = ethereum
