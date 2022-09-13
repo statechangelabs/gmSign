@@ -19,7 +19,7 @@ import { KeyPair } from "ucan-storage-commonjs/keypair";
 import { build, validate } from "ucan-storage-commonjs/ucan-storage";
 import { NonEvilToken, NonEvilToken__factory } from "./contracts";
 //#region Constants
-const DEFAULT_RENDERER = "https://hellosign.polydocs.xyz";
+const DEFAULT_RENDERER = "https://sign.gmsign.xyz";
 const DEFAULT_LICENSE_VERSION = 0;
 //#endregion
 //#region Helper Functions
