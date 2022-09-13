@@ -47,7 +47,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "prepare": "rm -rf ./src/contracts ; cp -r ../hardhat/typechain-types ./src/contracts"
+    "build:types": "rm -rf ./src/contracts ; cp -r ../hardhat/typechain-types ./src/contracts",
+    "restart": "yarn build:types && yarn start"
   },
   "eslintConfig": {
     "extends": [
