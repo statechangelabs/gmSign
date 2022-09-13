@@ -11,47 +11,18 @@ import {
   Callback,
   Handler,
 } from "aws-lambda";
-import { Agent } from "https";
-import { QldbDriver, RetryConfig } from "amazon-qldb-driver-nodejs";
-import { getAssetPath } from "@raydeck/local-assets";
-import { BigNumber, ContractFactory, ethers, utils } from "ethers";
-import { exec } from "child_process";
-import { List, load, Value } from "ion-js/dist/commonjs/es6/dom";
+import { BigNumber, ethers, utils } from "ethers";
 import { Lambda } from "aws-sdk";
 import { get as registryGet } from "@raydeck/registry-manager";
-import { copyFileSync, readFileSync, writeFileSync } from "fs";
-import {
-  TermsableNoToken__factory,
-  ERC721Termsable__factory,
-  ERC721Termsable,
-} from "./contracts/index";
-import { promisify } from "util";
-import { render } from "mustache";
-import fetch from "node-fetch";
+import fetch, { RequestInit, Response } from "node-fetch";
 import { KeyPair } from "ucan-storage-commonjs/keypair";
 import { build, validate } from "ucan-storage-commonjs/ucan-storage";
+import { NonEvilToken, NonEvilToken__factory } from "./contracts";
 //#region Constants
-const DEFAULT_RENDERER =
-  "bafybeig44fabnqp66umyilergxl6bzwno3ntill3yo2gtzzmyhochbchhy";
-const DEFAULT_TEMPLATE =
-  "bafybeiavljiisrizkro3ob5rhdludulsiqwkjp43lanlekth33sqhikfry/template.md";
+const DEFAULT_RENDERER = "https://hellosign.polydocs.xyz";
+const DEFAULT_LICENSE_VERSION = 0;
 //#endregion
-//#region QLDB intialization
-const maxConcurrentTransactions = 10;
-const retryLimit = 4;
-//Reuse connections with keepAlive
-const agentForQldb: Agent = new Agent({
-  keepAlive: true,
-  maxSockets: maxConcurrentTransactions,
-});
-const serviceConfigurationOptions = {
-  region: process.env.region || process.env.AWS_REGION,
-  httpOptions: {
-    agent: agentForQldb,
-  },
-};
-const retryConfig: RetryConfig = new RetryConfig(retryLimit);
-const ledgerName = process.env.ledgerName || "myLedger";
+//#region Helper Functions
 const chainInfo: Record<string, { privateKey: string; url: string }> = {
   "80001": {
     privateKey: process.env.METASIGNER_MUMBAI_PRIVATE_KEY || "",
@@ -71,98 +42,79 @@ const getChainInfo = (chainId: string) => {
   return _chainInfo;
 };
 
-const qldbDriver: QldbDriver = new QldbDriver(
-  ledgerName,
-  serviceConfigurationOptions,
-  maxConcurrentTransactions,
-  retryConfig
-);
-//#endregion
-//#region Helper Functions
-let madeTables = false;
-const makeTables = async () => {
-  if (madeTables) return;
-  const tableNames = await qldbDriver.getTableNames();
-  if (!tableNames.includes("Contracts")) {
-    //Build transmissions table
-    await qldbDriver.executeLambda(async (txn) => {
-      await txn.execute(`CREATE TABLE Contracts`);
-      await txn.execute(`CREATE INDEX ON Contracts (id)`);
-      await txn.execute(`CREATE INDEX ON Contracts (owner)`);
-    });
-  }
-  if (!tableNames.includes("Accounts")) {
-    //Build transmissions table
-    await qldbDriver.executeLambda(async (txn) => {
-      await txn.execute(`CREATE TABLE Accounts`);
-      await txn.execute(`CREATE INDEX ON Accounts (id)`);
-    });
-  }
-  if (!tableNames.includes("Templates")) {
-    //Build transmissions table
-    await qldbDriver.executeLambda(async (txn) => {
-      await txn.execute(`CREATE TABLE Templates`);
-      await txn.execute(`CREATE INDEX ON Templates (id)`);
-      await txn.execute(`CREATE INDEX ON Templates (owner)`);
-    });
-  }
-  if (!tableNames.includes("Users")) {
-    //Build transmissions table
-    await qldbDriver.executeLambda(async (txn) => {
-      await txn.execute(`CREATE TABLE Users`);
-      await txn.execute(`CREATE INDEX ON Users (id)`);
-    });
-  }
-  madeTables = true;
+const urlBase = "https://xw8v-tcfi-85ay.n7.xano.io/api:W2GV-aeC";
+const xanoFetch = async (
+  path: string,
+  options: RequestInit = {}
+): Promise<Response> => {
+  const headers = {
+    Authorization: "Bearer " + process.env.HELLOSIGN_API_KEY,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+  console.log(
+    "RHD Reaching out to Xano",
+    urlBase,
+    path,
+    JSON.stringify(headers, null, 2)
+  );
+  return fetch(urlBase + path, { ...options, headers });
 };
-const getRecord = async (tableName: string, id: string) => {
-  await makeTables();
-  const result = await qldbDriver.executeLambda(async (txn) => {
-    const result = await txn.execute(
-      `SELECT * FROM ${tableName} WHERE id = '${id}'`
-    );
-    return result;
+
+//getAccount - get from the list in the original file we have of this
+let account: any;
+let accountId: any;
+const getAccount = async (_accountId?: string) => {
+  if (_accountId) accountId = _accountId;
+  if (account) return account;
+  if (!accountId) throw new Error("No account id");
+  console.log("Getting account", accountId);
+  const response = await xanoFetch(`/hs_accounts/${accountId}`, {
+    method: "GET",
   });
-  return result.getResultList().pop();
+  if (response.status !== 200) {
+    return undefined;
+  }
+  const obj = await response.json();
+  return obj;
 };
-const getUser = async (address: string) =>
-  getRecord("Users", address.toLowerCase());
-const getContract = async (id: string, account?: Value) => {
-  const contract = await getRecord("Contracts", id);
-  if (!contract)
+
+const getContractId = (address: string, chainId: string) => {
+  return `${chainId}::${address}`;
+};
+
+const getContractPartsFromId = (id: string) => {
+  const [chainId, address] = id.split("::", 2);
+  return { chainId, address };
+};
+
+//getContract
+
+const getContractById = async (id: string): Promise<any> => {
+  try {
+    const account = await getAccount();
+    const response = await xanoFetch(`/hs_contract?hs_contracts_id=${id}`, {
+      method: "GET",
+    });
+    const obj = await response.json();
+    if (obj.owner === account.id) {
+      return { contract: obj };
+    } else {
+      throw new Error("Not owner");
+    }
+  } catch (e) {
     return {
       contract: undefined,
       contractError: sendHttpResult(400, "No contract found"),
     };
-  const owner = contract.get("owner")?.stringValue()?.toLowerCase() ?? "";
-  if (owner !== account?.get("id")?.stringValue()?.toLowerCase())
-    return {
-      contract: undefined,
-      contractError: sendHttpResult(400, "Not contract owner"),
-    };
-  return { contract, contractError: undefined };
-};
-const getAccount = async (id: string) =>
-  getRecord("Accounts", id.toLowerCase());
-const getAccountsForUser = async (address: string) => {
-  const user = await getUser(address);
-  if (user) {
-    const accounts = user.get("accounts") as List;
-    const accountArr: Value[] = [];
-    for (let i = 0; i < accounts.length; i++) {
-      const a = accounts.get(i);
-      if (a) {
-        accountArr.push(a);
-      }
-    }
-    const output = accountArr.map((v) => v.stringValue()).filter(Boolean);
-    if (output && output.length) return output as string[];
   }
-  return [];
 };
+
 const getSignerFromHeader = <T extends { exp: number }>(
   event: APIGatewayProxyEvent
 ) => {
+  account = undefined;
+  accountId = undefined;
   //check for the header
   //check the header for my signature
   const authorization = event.headers.Authorization;
@@ -181,33 +133,17 @@ const getSignerFromHeader = <T extends { exp: number }>(
         return undefined;
       }
     }
+    accountId = address;
     return { address, message: parsedMessage };
   }
   return undefined;
-};
-
-const _validateAccount = (
-  accounts: Record<string, Value>,
-  accountId?: string
-) => {
-  let error: ReturnType<typeof sendHttpResult> | undefined;
-  if (!accountId) accountId = Object.keys(accounts)[0];
-  if (!accountId) error = sendHttpResult(400, "No account id");
-  const account = accounts[accountId.toLowerCase()];
-  if (!account) error = sendHttpResult(400, "No account found");
-  if (error) return { account: undefined, accountError: error };
-  else return { account, accountError: undefined };
 };
 const makeAuthenticatedFunc = (
   func: (args: {
     event: APIGatewayProxyEvent;
     context: any;
     callback: Callback<APIGatewayProxyResult>;
-    user: Value;
-    accounts: Record<string, Value>;
-    validateAccount: (
-      accountId?: string
-    ) => ReturnType<typeof _validateAccount>;
+    user: Awaited<ReturnType<typeof getAccount>>;
   }) => void
 ) => <Handler<APIGatewayProxyEvent, APIGatewayProxyResult>>(async (
     event,
@@ -218,55 +154,39 @@ const makeAuthenticatedFunc = (
     if (!payload) {
       return sendHttpResult(401, "Unauthorized");
     }
-    let user = await getUser(payload.address);
+    let user = await getAccount(payload.address);
     if (!user) {
-      await qldbDriver.executeLambda(async (txn) => {
-        await txn.execute("INSERT INTO Users ?", {
-          id: payload.address.toLowerCase(),
-          accounts: [payload.address.toLowerCase()],
-        });
-        await txn.execute("INSERT INTO Accounts ?", {
-          id: payload.address.toLowerCase(),
-        });
+      //make the account
+      console.log(
+        "I am trying to make the account on xano",
+        JSON.stringify({ address: payload.address }),
+        "Hello"
+      );
+      const response = await xanoFetch(`/hs_accounts`, {
+        method: "POST",
+        body: JSON.stringify({ address: payload.address }),
       });
-      user = await getUser(payload.address);
+      user = await getAccount();
       if (!user) {
         return sendHttpResult(500, "Error creating user");
       }
-    }
-    const accountIds = await getAccountsForUser(payload.address);
-    const accountList = (
-      await Promise.all(accountIds.map(async (id) => await getAccount(id)))
-    ).filter(Boolean);
-    const accounts = accountList.reduce(
-      (acc, account) => ({
-        ...acc,
-        [account?.get("id")?.stringValue() || ""]: account,
-      }),
-      {}
-    );
-    if (!Object.keys(accounts).length) {
-      return sendHttpResult(401, "No Authorized accounts");
     }
     return func({
       event,
       context,
       callback,
       user,
-      accounts: accounts as Record<string, Value>,
-      validateAccount: (accountId?: string) =>
-        _validateAccount(accounts, accountId),
     });
   });
 const getProvider = (chainId: string) => {
   const chainInfo = getChainInfo(chainId);
+  console.log("got chaininfo for chain", chainId, chainInfo);
   const provider = new ethers.providers.StaticJsonRpcProvider(chainInfo.url);
   const signer = new ethers.Wallet(chainInfo.privateKey, provider);
   return { provider, signer };
 };
 const getGasOptions = async (chainId: string) => {
   const { provider } = getProvider(chainId);
-
   const gasPrice = await provider.getGasPrice();
   const maxFeePerGas = gasPrice
     ? gasPrice.gt(utils.parseUnits("10", "gwei"))
@@ -283,80 +203,11 @@ const getGasOptions = async (chainId: string) => {
 };
 
 //#endregion
-//#region Unsecured API Endpoints
-export const signDocument = makeAPIGatewayLambda({
-  path: "/sign",
-  method: "post",
-  cors: true,
-  timeout: 30,
-  func: async (event, context, callback) => {
-    if (!event.body) return sendHttpResult(400, "No body provided");
-    const {
-      address,
-      signature,
-      message,
-    }: { address: string; signature: string; message: string } = JSON.parse(
-      event.body
-    );
-    if (!ethers.utils.verifyMessage(message, signature)) {
-      return sendHttpResult(400, "Invalid signature");
-    }
-    const polydocsURI = message.substring(
-      message.indexOf(": "),
-      message.length
-    );
-    const fragment = polydocsURI.substring(polydocsURI.indexOf("#") + 1);
-    const [, chainId, contractAddress, blockNumber] = fragment.split("::");
-    //check the chainID
-    const { signer } = getProvider(chainId);
-    const gasOptions = await getGasOptions(chainId);
-
-    const polydocs = TermsableNoToken__factory.connect(contractAddress, signer);
-    try {
-      await polydocs.acceptTermsFor(address, message, signature, gasOptions);
-      return httpSuccess("signed");
-    } catch (e) {
-      console.log("error on the transaction", e);
-      return sendHttpResult(
-        500,
-        "Could not sign document on contract " + contractAddress
-      );
-    }
-  },
-});
-// export const registerUser = makeAPIGatewayLambda({
-//   path: "/register",
-//   method: "post",
-//   cors: true,
-//   timeout: 30,
-//   func: async (event, context, callback) => {
-//     if (!event.body) return sendHttpResult(400, "No body provided");
-//     const {
-//       address,
-//       signature,
-//       message,
-//     }: { address: string; signature: string; message: string } = JSON.parse(
-//       event.body
-//     );
-//     await qldbDriver.executeLambda(async (txn) => {
-//       await txn.execute(
-//         "INSERT INTO Users (id, accounts) VALUES ($1, $2)",
-//         address,
-//         [address]
-//       );
-//       await txn.execute("INSERT INTO Accounts (id) VALUES ($1)", address);
-//     });
-//     return httpSuccess("registered");
-//   },
-// });
-//#endregion
 //#region Contract Deployment API Endpoints
 type DeployEvent = {
   address: string;
   name: string;
   symbol: string;
-  renderer: string;
-  template: string;
   // terms: Record<string, string>;
   // title: string;
   // description: string;
@@ -366,6 +217,7 @@ type DeployEvent = {
   royaltyPercentage: string;
   chainId: string;
   uri: string;
+  licenseVersion: number;
 };
 export const deployNFTContract = makeAPIGatewayLambda({
   path: "/make-nft-contract",
@@ -373,24 +225,21 @@ export const deployNFTContract = makeAPIGatewayLambda({
   cors: true,
   timeout: 30,
   func: makeAuthenticatedFunc(
-    async ({ event, context, callback, user, accounts, validateAccount }) => {
+    async ({ event, context, callback, user: account }) => {
       if (!event.body) return sendHttpResult(400, "No body provided");
       const {
         address,
         name,
         symbol,
         chainId,
-        renderer,
-        template,
         uri,
         royaltyRecipient,
         royaltyPercentage,
+        licenseVersion,
       }: DeployEvent = JSON.parse(event.body);
       //Validate the address
       if (!address || ethers.utils.isAddress(address) === false)
         return sendHttpResult(400, "Invalid address");
-      const { account, accountError } = validateAccount(address);
-      if (accountError) return accountError;
       if (!name) return sendHttpResult(400, "Invalid name");
       if (!symbol) return sendHttpResult(400, "Invalid symbol");
       if (!getChainInfo(chainId).url)
@@ -402,7 +251,11 @@ export const deployNFTContract = makeAPIGatewayLambda({
         chainId,
         uri,
         accountId: account,
+        royaltyPercentage,
+        royaltyRecipient,
+        licenseVersion,
       });
+      console.log("Triggering doDeploy with payload", Payload);
       await new Lambda({ region: registryGet("AWS_REGION", "us-east-1") })
         .invoke({
           InvocationType: "Event",
@@ -422,25 +275,25 @@ export const doDeploy = makeLambda({
     const {
       royaltyRecipient,
       royaltyPercentage,
-      renderer = DEFAULT_RENDERER,
-      template = DEFAULT_TEMPLATE,
       // terms = {},
       uri,
       chainId,
       name,
       address,
       symbol,
+      licenseVersion,
     }: DeployEvent = event;
     const { provider, signer } = getProvider(chainId);
+    console.log("I have a provider for chainId", chainId);
     if (!signer) return sendHttpResult(400, "bad chain id");
     //time to deploy
     // build the new contract
-
+    console.log("I will get fee data things");
     const feeData = await provider.getFeeData();
     const gasPrice = await provider.getGasPrice();
-    const polyDocsFactory = new ERC721Termsable__factory(signer);
-
-    console.log("Deploying with", address, name, symbol);
+    const polyDocsFactory = new NonEvilToken__factory(signer);
+    console.log("That's over now");
+    console.log("Deploying with", licenseVersion, address, name, symbol);
     console.log(
       "feedata",
       feeData.maxFeePerGas?.toNumber().toLocaleString(),
@@ -458,45 +311,75 @@ export const doDeploy = makeLambda({
       maxFeePerGas.toNumber().toLocaleString(),
       maxPriorityFeePerGas.toNumber().toLocaleString()
     );
-    let polyDocs: ERC721Termsable;
+    let polyDocs: NonEvilToken;
     try {
-      const polyDocs1 = await polyDocsFactory.deploy(address, name, symbol, {
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-        gasLimit: BigNumber.from(6_500_000),
-      });
+      console.log(
+        "I am about to deploy",
+        licenseVersion,
+        address,
+        name,
+        symbol,
+        {
+          maxFeePerGas,
+          maxPriorityFeePerGas,
+          gasLimit: BigNumber.from(6_500_000),
+        }
+      );
+      const polyDocs1 = await polyDocsFactory.deploy(
+        licenseVersion,
+        address,
+        name,
+        symbol,
+        {
+          maxFeePerGas,
+          maxPriorityFeePerGas,
+          gasLimit: BigNumber.from(6_500_000),
+        }
+      );
       polyDocs = polyDocs1;
     } catch (e) {
+      console.log("Hit an error in the first round:", (e as any).errorMessage);
       console.log("Trying with double fees");
       maxFeePerGas = maxFeePerGas.mul(2);
       maxPriorityFeePerGas = maxPriorityFeePerGas.mul(2);
-      const polyDocs2 = await polyDocsFactory.deploy(address, name, symbol, {
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-        gasLimit: BigNumber.from(6_500_000),
-      });
+      const polyDocs2 = await polyDocsFactory.deploy(
+        licenseVersion,
+        address,
+        name,
+        symbol,
+        {
+          maxFeePerGas,
+          maxPriorityFeePerGas,
+          gasLimit: BigNumber.from(6_500_000),
+        }
+      );
       polyDocs = polyDocs2;
     }
     console.log("polyDocs is ", polyDocs.address);
 
     const id = `${chainId}::${polyDocs.address}`;
-    await qldbDriver.executeLambda(async (tx) => {
-      await tx.execute("INSERT INTO Contracts ?", {
-        id,
+    const account = await getAccount(address);
+    const response = await xanoFetch("/hs_contracts", {
+      body: JSON.stringify({
+        owner: account.id,
+        contractAddress: polyDocs.address,
+        chainId,
+        contractId: id,
         name,
         symbol,
-        owner: address.toLowerCase(),
         deployed: 0,
-      });
-      return true;
+      }),
+
+      method: "POST",
     });
+
     await polyDocs.deployed();
 
-    const pdTxn = await polyDocs.setPolydocs(renderer, template, [], {
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-    });
-    await pdTxn.wait();
+    // const pdTxn = await polyDocs.setPolydocs(renderer, template, [], {
+    //   maxFeePerGas,
+    //   maxPriorityFeePerGas,
+    // });
+    // await pdTxn.wait();
     const mdTxn = await polyDocs.setURI(uri, {
       maxFeePerGas,
       maxPriorityFeePerGas,
@@ -504,162 +387,57 @@ export const doDeploy = makeLambda({
 
     //@TODO support royalty
     await mdTxn.wait();
-    await qldbDriver.executeLambda(async (tx) => {
-      await tx.execute(`UPDATE Contracts SET deployed = 1 WHERE id = '${id}'`);
+    const deployedUri = `/hs_contracts_deployed`;
+    console.log("Updating with deployedUri", deployedUri);
+    const response2 = await xanoFetch(deployedUri, {
+      body: JSON.stringify({
+        deployed: 1,
+        hs_contracts_id: id,
+      }),
+      method: "POST",
     });
+    console.log("response2", response2.status, await response2.text());
   },
 });
-export const hhDeploy = makeLambda({
-  timeout: 300,
-  func: async (event) => {
-    const {
-      address,
-      name,
-      symbol,
-      renderer = DEFAULT_RENDERER,
-      template = DEFAULT_TEMPLATE,
-      terms = {},
-      chainId,
-    }: {
-      address: string;
-      name: string;
-      symbol: string;
-      renderer: string;
-      template: string;
-      terms: Record<string, string>;
-      chainId: string;
-    } = event;
-    const { provider, signer } = getProvider(chainId);
-
-    //time to deploy
-    // build the new contract
-    //copy everything into tmp/contracts
-
-    const templateContract = readFileSync(
-      getAssetPath() + "/contracts/tokens/MyContract.sol",
-      "utf8"
-    );
-    await promisify(exec)(
-      "cp -r " + getAssetPath() + "/contracts/ /tmp/sources/"
-    );
-    await promisify(exec)(
-      "cp -r " + getAssetPath() + "/node_modules/ /tmp/node_modules/"
-    );
-
-    const renderedContract = render(templateContract, {
-      newowner: address.replace('"', '\\"'),
-      name: name.replace('"', '\\"'),
-      symbol: symbol.replace('"', '\\"'),
-    });
-
-    writeFileSync("/tmp/sources/tokens/MyContract.sol", renderedContract);
-    console.log("wrote contract");
-    console.log(readFileSync("/tmp/sources/tokens/MyContract.sol", "utf8"));
-    console.log("compiling contract");
-    copyFileSync(
-      getAssetPath() + "/hardhat.config.js",
-      "/tmp/hardhat.config.js"
-    );
-    const hardhatPrefix =
-      "cd /tmp && /opt/nodejs/node_modules/hardhat/internal/cli/cli.js";
-    const cmd = hardhatPrefix + " compile";
-    console.log("cmd is ", cmd);
-    console.log(await promisify(exec)(cmd));
-    console.log("Getting the json");
-    console.log(await promisify(exec)("ls -lR /tmp"));
-
-    const json = readFileSync(
-      "/tmp/artifacts/MyContract.sol/MyContract.json",
-      "utf8"
-    );
-    console.log("json is ", json);
-    const { abi, bytecode } = JSON.parse(json);
-    console.log("abi is ", abi);
-    const polyDocsFactory = new ContractFactory(abi, bytecode, signer);
-    // const polyDocsFactory = new ERC721Termsable__factory(signer);
-    const hundredgwei = ethers.utils.parseUnits("50", "gwei");
-    console.log("A hundred gwei is", hundredgwei.toString());
-    console.log("Deploying with", address, name, symbol);
-    const polyDocs = await polyDocsFactory.deploy(address, name, symbol, {
-      maxFeePerGas: hundredgwei,
-      maxPriorityFeePerGas: hundredgwei,
-      gasLimit: BigNumber.from(6_500_000),
-    });
-    console.log("polyDocs is ", polyDocs.address);
-    await polyDocs.deployed();
-    const pdtxn = await polyDocs.setPolydocs(
-      renderer,
-      template,
-      Object.entries(terms).map(([key, value]) => ({
-        key,
-        value,
-      }))
-    );
-    await pdtxn.wait();
-    console.log("I have a deployed polydocs");
-  },
-});
-export const testHH = makeLambda({
-  timeout: 300,
-  func: async (event) => {
-    console.log("my event is ", event);
-    if (event) console.log(await promisify(exec)(event));
-    // const path = require.resolve("hardhat");
-    // console.log("path is ", path);
-    // console.log("current path is", __dirname);
-    // console.log(await promisify(exec)("pwd"));
-    // const output = await promisify(exec)("ls -l opt/node_modules");
-    // console.log("output is ", output);
-  },
-});
-
 //#endregion
 export const mintNFT = makeAPIGatewayLambda({
   timeout: 300,
   method: "post",
   path: "/mintNFT",
   cors: true,
-  func: makeAuthenticatedFunc(
-    async ({ event, context, callback, accounts, user, validateAccount }) => {
-      //Get the image
-      const {
-        contractAddress,
-        cid,
-        chainId,
-        account: accountId,
-      } = JSON.parse(event.body || "{}");
-      const { account, accountError } = await validateAccount(accountId);
-      if (!account && accountError) return accountError;
-      const { contractError } = await getContract(
-        `${chainId}::${contractAddress}`,
-        account
-      );
-      if (contractError) return contractError;
-      const { signer } = getProvider(chainId);
+  func: makeAuthenticatedFunc(async ({ event, user: account }) => {
+    //Get the image
+    const {
+      contractAddress,
+      cid,
+      chainId,
+      account: accountId,
+    } = JSON.parse(event.body || "{}");
+    const { contractError } = await getContractById(
+      `${chainId}::${contractAddress}`
+    );
+    if (contractError) return contractError;
+    const { signer } = getProvider(chainId);
 
-      console.log("Hooray I did not run upload and got a cid", cid);
-      console.log("connecting to contract at ", contractAddress);
-      const contract = ERC721Termsable__factory.connect(
-        contractAddress,
-        signer
-      );
-      console.log("Connected to contract at address", contractAddress);
-      const gasOptions = await getGasOptions(chainId);
-      console.log("Minting", cid, account.get("id")?.stringValue() || "");
-      const tx = await contract.mintFor(
-        cid,
-        account.get("id")?.stringValue() || "",
-        {
-          ...gasOptions,
-          gasLimit: BigNumber.from(500_000),
-        }
-      );
-      console.log("Minted good as gold");
-      await tx.wait();
-      console.log("Done!!!!!");
-      return httpSuccess("hooray!!!");
-    }
-  ),
+    console.log("Hooray I did not run upload and got a cid", cid);
+    console.log("connecting to contract at ", contractAddress);
+    const contract = NonEvilToken__factory.connect(contractAddress, signer);
+    console.log("Connected to contract at address", contractAddress);
+    const gasOptions = await getGasOptions(chainId);
+    console.log("Minting", cid, account.get("id")?.stringValue() || "");
+    const tx = await contract.mintFor(
+      cid,
+      account.get("id")?.stringValue() || "",
+      {
+        ...gasOptions,
+        gasLimit: BigNumber.from(500_000),
+      }
+    );
+    console.log("Minted good as gold");
+    await tx.wait();
+    console.log("Done!!!!!");
+    return httpSuccess("hooray!!!");
+  }),
 });
 //#region UCAN Management
 let rootToken = "";
@@ -709,38 +487,15 @@ export const getContracts = makeAPIGatewayLambda({
   method: "get",
   cors: true,
   path: "/contracts",
-  func: makeAuthenticatedFunc(async ({ event, validateAccount }) => {
-    const { account: accountId } = event.queryStringParameters || {};
-    const { account, accountError } = validateAccount(accountId);
-    if (accountError) return accountError;
+  func: makeAuthenticatedFunc(async ({ event, user }) => {
     //lets get my contracts
-    const list = await qldbDriver.executeLambda(async (txn) => {
-      const result = await txn.execute(
-        `SELECT * FROM Contracts WHERE owner = ?`,
-        account.get("id")?.stringValue()?.toLowerCase() || ""
-      );
-      return result.getResultList();
-    });
-    const output = list.map((v, i) => {
-      const id = v.get("id")?.stringValue() ?? "";
-      const [chainId, address] = id.split("::");
-      const name = v.get("name")?.stringValue() ?? "";
-      const description = v.get("description")?.stringValue() ?? "";
-      const image = v.get("image")?.stringValue() ?? "";
-      const symbol = v.get("symbol")?.stringValue() ?? "";
-      const deployed = v.get("deployed")?.numberValue() ?? false;
-      return {
-        id,
-        chainId,
-        address,
-        name,
-        description,
-        image,
-        symbol,
-        deployed,
-      };
-    });
-    return httpSuccess(output);
+    const accountId = user.address;
+    console.log("I have a user object", JSON.stringify(user, null, 2));
+    const result = await xanoFetch(`/hs_accounts/${accountId}/contracts`);
+    if (result.status !== 200)
+      return sendHttpResult(400, "No good result" + (await result.text()));
+    const list = await result.json();
+    return httpSuccess(list);
   }),
 });
 export const updateContract = makeAPIGatewayLambda({
@@ -748,10 +503,9 @@ export const updateContract = makeAPIGatewayLambda({
   method: "post",
   cors: true,
   path: "/contracts",
-  func: makeAuthenticatedFunc(async ({ event, validateAccount }) => {
+  func: makeAuthenticatedFunc(async ({ event, user: account }) => {
     if (!event.body) return sendHttpResult(400, "No body");
     const {
-      accountId,
       contractAddress,
       chainId,
       uri,
@@ -759,7 +513,6 @@ export const updateContract = makeAPIGatewayLambda({
       renderer,
       terms,
     }: {
-      accountId?: string;
       contractAddress: string;
       chainId: string;
       uri?: string;
@@ -767,23 +520,14 @@ export const updateContract = makeAPIGatewayLambda({
       renderer?: string;
       terms?: Record<string, string>;
     } = JSON.parse(event.body);
-    const { account, accountError } = validateAccount(accountId);
-    if (accountError) return accountError;
-    const { contractError } = await getContract(
-      `${chainId}::${contractAddress}`,
-      account
+    const { contractError } = await getContractById(
+      `${chainId}::${contractAddress}`
     );
     if (contractError) return contractError;
     const { provider, signer } = getProvider(chainId);
     const gasOptions = await getGasOptions(chainId);
-    const pdContract = ERC721Termsable__factory.connect(
-      contractAddress,
-      provider
-    );
-    const pdSignable = ERC721Termsable__factory.connect(
-      contractAddress,
-      signer
-    );
+    const pdContract = NonEvilToken__factory.connect(contractAddress, provider);
+    const pdSignable = NonEvilToken__factory.connect(contractAddress, signer);
     if (uri) {
       const oldUri = await pdContract.URI();
       if (uri !== oldUri) {
@@ -817,30 +561,31 @@ export const addContract = makeAPIGatewayLambda({
   method: "post",
   cors: true,
   path: "/contracts/add",
-  func: makeAuthenticatedFunc(async ({ event, validateAccount }) => {
+  func: makeAuthenticatedFunc(async ({ event, user: account }) => {
     if (!event.body) return sendHttpResult(400, "No body");
-    const { accountId, contractAddress, chainId } = JSON.parse(event.body);
-    const { account, accountError } = validateAccount(accountId);
-    if (accountError) return accountError;
+    const { contractAddress, chainId } = JSON.parse(event.body);
     const { provider } = getProvider(chainId);
-    const pdContract = ERC721Termsable__factory.connect(
-      contractAddress,
-      provider
-    );
+    const pdContract = NonEvilToken__factory.connect(contractAddress, provider);
     const [name, symbol] = await Promise.all([
       pdContract.name(),
       pdContract.symbol(),
     ]);
-    await qldbDriver.executeLambda(async (tx) => {
-      await tx.execute("INSERT INTO Contracts ?", {
-        id: `${chainId}::${contractAddress}`,
+    //Add contract
+    const { id } = account;
+    const result = await xanoFetch("/hs_contracts/", {
+      method: "POST",
+      body: JSON.stringify({
+        contractId: `${chainId}::${contractAddress}`,
+        address: contractAddress,
+        chainId,
         name,
         symbol,
-        owner: account.get("id")?.stringValue()?.toLowerCase(),
+        owner: id,
         deployed: 1,
-      });
-      return true;
+      }),
     });
+    const obj = await result.json();
+    console.log("Got back answer on my fetch", obj);
     return httpSuccess("ok");
   }),
 });
@@ -849,18 +594,29 @@ export const removeContract = makeAPIGatewayLambda({
   method: "delete",
   cors: true,
   path: "/contracts",
-  func: makeAuthenticatedFunc(async ({ event, validateAccount }) => {
-    const { accountId, id } = event.queryStringParameters || {};
+  func: makeAuthenticatedFunc(async ({ event, user: account }) => {
+    const { id } = event.queryStringParameters || {};
     if (!id) return sendHttpResult(400, "No id");
-    const { account, accountError } = validateAccount(accountId);
-    if (accountError) return accountError;
-    const { contractError } = await getContract(id, account);
-    if (contractError) return contractError;
-    await qldbDriver.executeLambda(async (tx) => {
-      const statement = `DELETE FROM Contracts WHERE id = '${id}'`;
-      await tx.execute(statement);
-      return true;
+    console.log("Getting a contract", id);
+    const { contract, contractError } = await getContractById(id);
+    if (contractError) {
+      console.log("Error getting contract", contractError);
+      return contractError;
+    }
+    console.log("I got the conrtract", id, contract);
+    if (contract.owner !== account.id) {
+      return sendHttpResult(403, "Not your contract");
+    }
+    console.log("deleting contract", id);
+    const response = await xanoFetch(`/hs_contract?hs_contracts_id=${id}`, {
+      method: "DELETE",
     });
+    console.log(
+      "I deleted the contract",
+      response.status,
+      await response.text()
+    );
+
     return httpSuccess("ok");
   }),
 });
