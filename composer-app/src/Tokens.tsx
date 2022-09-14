@@ -43,7 +43,9 @@ const Tokens: FC = () => {
   );
   const uris = useIPFSDataUriList(uploadedFileCids.map(({ cid }) => cid));
   const jsonText = useIPFSText(uri);
-  const { description: contractDescription } = JSON.parse(jsonText || "{}");
+  const { tokenDescription: contractDescription } = JSON.parse(
+    jsonText || "{}"
+  );
   const fetch = useAuthenticatedFetch();
   const { upload } = useUpload();
   //   const mint = useCallback(
@@ -144,7 +146,12 @@ const Tokens: FC = () => {
                         </div>
                         <div>
                           Description
-                          <Field type="textarea" name="description" />
+                          <Field
+                            component="textarea"
+                            rows={3}
+                            className="max-w-lg shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 "
+                            name="description"
+                          />
                         </div>
                       </div>
                       <div>

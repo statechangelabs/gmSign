@@ -728,7 +728,7 @@ const Contract: FC = () => {
             </a>
             <a
               className="btn btn-primary text-center"
-              href={`httpd://sign.gmsign.xyz/#/redirect::${chainId}::${contractAddress}`}
+              href={`https://sign.gmsign.xyz/#/redirect::${chainId}::${contractAddress}`}
               target="_blank"
               rel="noreferrer"
             >

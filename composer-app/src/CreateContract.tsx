@@ -168,7 +168,7 @@ export const CreateContract: FC = () => {
         // const { id } = await res.json();
         if (res.status === 200) {
           toast("Contract Created", { type: "success" });
-          // navigate(`/`);
+          navigate(`/`);
         } else {
           toast("Error creating contract", { type: "error" });
         }

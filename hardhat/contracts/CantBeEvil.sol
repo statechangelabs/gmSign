@@ -116,7 +116,7 @@ contract NonEvilToken is
         returns (uint256)
     {
         //require(isMinter(_to), "Not a minter");
-        require(_acceptedTerms(_to), "Terms not accepted");
+        //require(_acceptedTerms(_to), "Terms not accepted");
         uint256 newItemId = _tokenIds.current();
 
         _safeMint(_to, newItemId);

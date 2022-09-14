@@ -55,3 +55,70 @@
       "dev": false
       "prod": true
       "other": false
+"functions":
+  "deployNFTContract":
+    "handler": "handlers.deployNFTContract"
+    "timeout": 30
+    "events":
+      - "http":
+          "path": "/make-nft-contract"
+          "method": "post"
+          "cors": true
+          "private": false
+  "doDeploy":
+    "handler": "handlers.doDeploy"
+    "timeout": 300
+  "mintNFT":
+    "handler": "handlers.mintNFT"
+    "timeout": 300
+    "events":
+      - "http":
+          "path": "/mintNFT"
+          "method": "post"
+          "cors": true
+          "private": false
+  "getUCANToken":
+    "handler": "handlers.getUCANToken"
+    "timeout": 30
+    "events":
+      - "http":
+          "path": "/ucan-token"
+          "method": "get"
+          "cors": true
+          "private": false
+  "getContracts":
+    "handler": "handlers.getContracts"
+    "timeout": 30
+    "events":
+      - "http":
+          "path": "/contracts"
+          "method": "get"
+          "cors": true
+          "private": false
+  "updateContract":
+    "handler": "handlers.updateContract"
+    "timeout": 30
+    "events":
+      - "http":
+          "path": "/contracts"
+          "method": "post"
+          "cors": true
+          "private": false
+  "addContract":
+    "handler": "handlers.addContract"
+    "timeout": 30
+    "events":
+      - "http":
+          "path": "/contracts/add"
+          "method": "post"
+          "cors": true
+          "private": false
+  "removeContract":
+    "handler": "handlers.removeContract"
+    "timeout": 30
+    "events":
+      - "http":
+          "path": "/contracts"
+          "method": "delete"
+          "cors": true
+          "private": false

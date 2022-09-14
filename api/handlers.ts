@@ -424,15 +424,11 @@ export const mintNFT = makeAPIGatewayLambda({
     const contract = NonEvilToken__factory.connect(contractAddress, signer);
     console.log("Connected to contract at address", contractAddress);
     const gasOptions = await getGasOptions(chainId);
-    console.log("Minting", cid, account.get("id")?.stringValue() || "");
-    const tx = await contract.mintFor(
-      cid,
-      account.get("id")?.stringValue() || "",
-      {
-        ...gasOptions,
-        gasLimit: BigNumber.from(500_000),
-      }
-    );
+    console.log("Minting", cid, account.address || "");
+    const tx = await contract.mintFor(cid, account.address || "", {
+      ...gasOptions,
+      gasLimit: BigNumber.from(500_000),
+    });
     console.log("Minted good as gold");
     await tx.wait();
     console.log("Done!!!!!");
