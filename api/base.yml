@@ -42,7 +42,7 @@ plugins:
   - serverless-prune-plugin
   - serverless-dotenv-plugin
 resources:
-  Description: "Interface for Hellosign Polydocs API"
+  Description: "Interface for Hellosign gmSign API"
 custom:
   config: ${file(./config.json)}
   apiGatewayThrottling:
