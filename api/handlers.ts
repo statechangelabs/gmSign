@@ -42,7 +42,7 @@ const getChainInfo = (chainId: string) => {
   return _chainInfo;
 };
 
-const urlBase = "https://xw8v-tcfi-85ay.n7.xano.io/api:W2GV-aeC";
+const urlBase = "https://xw8v-tcfi-85ay.n7.xano.io/api:eu83lis8";
 const xanoFetch = async (
   path: string,
   options: RequestInit = {}
