@@ -232,7 +232,11 @@ const ContractEditor: FC = () => {
 
                 <button
                   disabled={!dirty || !isValid || isSubmitting}
-                  className="btn btn-primary mt-6"
+                  className={
+                    !dirty || !isValid || isSubmitting
+                      ? "btn btn-gray mt-6 text-gray-700"
+                      : "btn btn-primary mt-6"
+                  }
                 >
                   Save Changes
                 </button>
