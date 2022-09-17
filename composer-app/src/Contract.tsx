@@ -58,7 +58,7 @@ const ContractDocument: FC = () => {
       provider
     );
     setCurrentUrl(
-      await noTokenContract.termsUrlWithPrefix("https://ipfs.io/ipfs/")
+      await noTokenContract.termsUrlWithPrefix("https://w3s.link/ipfs/")
     );
   }, [contractAddress, provider]);
   useEffect(() => {
@@ -190,7 +190,7 @@ const ContractDocument: FC = () => {
               <span className="font-semibold mr-6">Renderer CID:</span>{" "}
               {currentRenderer && (
                 <a
-                  href={`https://ipfs.io/ipfs/${currentRenderer}`}
+                  href={`https://w3s.link/ipfs/${currentRenderer}`}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -252,7 +252,7 @@ const ContractDocument: FC = () => {
                     <span className="font-semibold mr-6">Template CID:</span>
                     {currentTemplate && (
                       <a
-                        href={`https://ipfs.io/ipfs/${currentTemplate}`}
+                        href={`https://w3s.link/ipfs/${currentTemplate}`}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -525,14 +525,16 @@ const ContractEditor: FC = () => {
           toast.info("Saving new JSON file to IPFS");
           const cid = await upload(JSON.stringify(newObj));
           toast.info("Updating contract via metatransaction");
-          await fetch("/contracts", {
-            method: "POST",
-            body: JSON.stringify({
-              contractAddress,
-              chainId,
-              uri: "ipfs://" + cid,
-            }),
-          });
+          await fetch(
+            "/contracts/" +
+              encodeURIComponent(chainId + "::" + contractAddress),
+            {
+              method: "POST",
+              body: JSON.stringify({
+                uri: "ipfs://" + cid,
+              }),
+            }
+          );
           toast.success("Saved!");
           console.log("submit");
         }}
@@ -593,9 +595,9 @@ const ContractEditor: FC = () => {
                         name="description"
                         rows={3}
                         className="max-w-lg shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 "
-                        defaultValue={
-                          "Purchasing this token requires accepting our service terms: [POLYDOCS]"
-                        }
+                        // defaultValue={
+                        //   "Purchasing this token requires accepting our service terms: [POLYDOCS]"
+                        // }
                       />
                       <ErrorMessage name="description" />
                     </div>

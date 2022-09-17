@@ -32,7 +32,7 @@ const ContractFinder: FC<{ refresh: () => void }> = ({ refresh }) => {
           validateOnMount={true}
           onSubmit={async (values, { setSubmitting }) => {
             console.log("I received values", values);
-            await fetch("/contracts/add", {
+            await fetch("/contracts", {
               method: "POST",
               body: JSON.stringify({
                 contractAddress: values.contractAddress,

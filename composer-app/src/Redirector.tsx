@@ -11,7 +11,7 @@ const providers: Record<string, string> = {
   "80001": process.env.REACT_APP_MUMBAI_RPC || "",
 };
 console.log(process.env);
-const prefix = "https://ipfs.io/ipfs/";
+const prefix = "https://w3s.link/ipfs/";
 const Redirector: FC = () => {
   const { key } = useParams();
   const [error, setError] = useState("");

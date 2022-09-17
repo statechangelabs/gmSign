@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import useAsyncEffect from "./useAsyncEffect";
 import { decode, encode } from "base64-arraybuffer";
 import localforage from "localforage";
-let gateway = "https://ipfs.io/ipfs/";
+let gateway = "https://w3s.link/ipfs/";
 export const setGateway = (newGateway: string) => {
   gateway = newGateway;
 };

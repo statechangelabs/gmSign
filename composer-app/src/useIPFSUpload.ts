@@ -1,12 +1,16 @@
 import { useCallback, useMemo } from "react";
 import { useAuthenticatedFetch } from "./Authenticator";
-
+let cachedToken: { token: string; did: string } = { token: "", did: "" };
+let cachedToken__expires = 0;
 const ucanPath = process.env.UPLOAD_PATH ?? "/ucan-token";
 export const useUpload = () => {
   const authFetch = useAuthenticatedFetch();
   const getUCAN = useCallback(async () => {
+    if (cachedToken__expires > Date.now()) return cachedToken;
     const response = await authFetch(ucanPath);
     const json = (await response.json()) as { token: string; did: string };
+    cachedToken = json;
+    cachedToken__expires = Date.now() + 1000 * 5 * 60;
     return json;
   }, [authFetch]);
   const uploadBlob = useCallback(

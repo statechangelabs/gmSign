@@ -65,7 +65,7 @@ const Home: FC = () => {
                         <div>{name}</div>
                         <div className="text-xs opacity-50">
                           {/* <a
-                      href={"https://ipfs.io/ipfs/" + cid}
+                      href={"https://w3s.link/ipfs/" + cid}
                        className=" hover:text-primary-light"
                       > */}
                           cid: {cid}

@@ -114,7 +114,7 @@ const Renderer: FC<{
           <header className="flex justify-between items-center p-4 bg-opacity-80 bg-white">
             <div className="flex items-center space-x-2">
               <img src={Logo} alt="Logo" className="w-12" />
-              <h1 className="text-lg font-bold text-black">Polydocs</h1>
+              <h1 className="text-lg font-bold text-black">gmSign</h1>
             </div>
           </header>
           <div className="max-w-[760px] mx-auto lg:-mt-4 shadow-lg">

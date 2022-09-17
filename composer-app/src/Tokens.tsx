@@ -111,7 +111,7 @@ const Tokens: FC = () => {
                 });
                 setSubmitting(true);
                 const jsonCid = await upload(json);
-                const response = await fetch("/mintNFT", {
+                const response = await fetch("/mint", {
                   method: "POST",
                   body: JSON.stringify({
                     contractAddress,
@@ -134,7 +134,7 @@ const Tokens: FC = () => {
                     >
                       <div
                         onClick={() => {
-                          window.open("https://ipfs.io/ipfs/" + cid, "_blank");
+                          window.open("https://w3s.link/ipfs/" + cid, "_blank");
                         }}
                       >
                         <img src={uri} className="w-12 h-12 object-contain" />

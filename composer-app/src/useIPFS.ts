@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import useAsyncEffect from "./useAsyncEffect";
 import { decode, encode } from "base64-arraybuffer";
 import localForage from "localforage";
@@ -6,9 +6,8 @@ let gateway = "https://w3s.link/ipfs/";
 export const setGateway = (newGateway: string) => {
   gateway = newGateway;
 };
-
+const waiters: Record<string, Array<(a: ArrayBuffer) => void>> = {};
 export const getIPFS = async (cid: string | undefined, nocache = false) => {
-  if (!cid) return;
   if (!cid) return;
   if (cid.startsWith("ipfs://")) cid = cid.slice(7);
   const content64 =
@@ -18,6 +17,13 @@ export const getIPFS = async (cid: string | undefined, nocache = false) => {
     return content;
   } else {
     if (cid.startsWith("https://")) {
+      if (!waiters[cid]) waiters[cid] = [];
+      let r: (a: ArrayBuffer) => void;
+      const p = new Promise<ArrayBuffer>((resolve, reject) => {
+        r = resolve;
+      });
+      waiters[cid].push(r!);
+      if (waiters[cid].length > 1) return await p;
       const response = await fetch(cid);
       const content = await response.blob();
       try {
@@ -26,7 +32,8 @@ export const getIPFS = async (cid: string | undefined, nocache = false) => {
         try {
           localForage.setItem("ipfs_" + cid, b64);
         } catch (e) {}
-        return ab;
+        waiters[cid].forEach((r) => r(ab));
+        return await p;
       } catch (e) {
         console.log("I hit an error", e);
       }
@@ -40,7 +47,7 @@ export const getIPFS = async (cid: string | undefined, nocache = false) => {
     try {
       const ab = await content2.arrayBuffer();
       const b64 = encode(ab);
-      localStorage.setItem("ipfs_" + cid, b64);
+      localForage.setItem("ipfs_" + cid, b64);
       return ab;
     } catch (e) {
       console.log("I hit an error", e);
@@ -64,7 +71,11 @@ export const getIPFSDataUri = async (
 
 export const useIPFS = (cid: string | undefined) => {
   const [ipfs, setIPFS] = useState<ArrayBuffer>();
+  const ipfsStateRef = useRef<Record<string, boolean>>({});
   useAsyncEffect(async () => {
+    if (!cid) return;
+    if (ipfsStateRef.current[cid]) return;
+    ipfsStateRef.current[cid] = true;
     const ab = await getIPFS(cid);
     setIPFS(ab);
     console.log("I set the ipfs");

@@ -2,13 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthenticatedFetch } from "./Authenticator";
 import { NonEvilToken__factory } from "./contracts";
 import { getProvider } from "./provider";
-import {
-  useIPFSText,
-  useIPFSDataUri,
-  getIPFS,
-  getIPFSText,
-  getIPFSDataUri,
-} from "./useIPFS";
+import { getIPFSText, getIPFSDataUri } from "./useIPFS";
 type PartialContract = {
   chainId: string;
   contractAddress: string;
@@ -129,7 +123,9 @@ export const useContracts = () => {
         old.filter((contract) => contract.contractId !== contractId)
       );
       console.log("I am removing contract", contractId);
-      await fetch(`/contracts?id=${contractId}`, { method: "DELETE" });
+      await fetch(`/contracts/${encodeURIComponent(contractId)}`, {
+        method: "DELETE",
+      });
       getContracts();
     },
     [fetch]

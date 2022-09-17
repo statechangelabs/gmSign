@@ -64,7 +64,7 @@ const Redirector: FC = () => {
           console.log("in nontotken view", fragment);
         } else {
           // window.location.href =
-          //   "https://ipfs.io/ipfs/" + renderer + ("/#/" + fragment);
+          //   "https://w3s.link/ipfs/" + renderer + ("/#/" + fragment);
           console.log("I would redirect to", {
             renderer,
             fragment,

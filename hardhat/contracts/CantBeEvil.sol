@@ -51,7 +51,10 @@ contract NonEvilToken is
         override(CantBeEvil, ERC721, ERC2981)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return
+            CantBeEvil.supportsInterface(interfaceId) ||
+            ERC721.supportsInterface(interfaceId) ||
+            ERC2981.supportsInterface(interfaceId);
     }
 
     function safeMint(address to, uint256 tokenId) public onlyMetaSigner {

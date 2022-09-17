@@ -59,10 +59,13 @@ const ContractMetadata: FC = () => {
         newMetadata.backgroundColor = values.backgroundColor;
         const newMetadataURI = await upload(JSON.stringify(newMetadata));
         //support gasless update
-        const response = await fetch("/setUri", {
-          method: "POST",
-          body: JSON.stringify({ chainId, contractAddress, newMetadataURI }),
-        });
+        fetch(
+          "/contract/" + encodeURIComponent(chainId + "::" + contractAddress),
+          {
+            method: "POST",
+            body: JSON.stringify({ uri: newMetadataURI }),
+          }
+        );
       }}
     ></Formik>
   );

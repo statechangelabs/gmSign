@@ -14,7 +14,7 @@ const Disconnected: FC = () => {
       </div>
       <div className="fixed bottom-0 w-screen h-10 p-2 bg-black text-white flex flex-row space-between">
         <div className="text-xs hover:text-primary-400 transition">
-          <a href="https://github.com/statechangelabs/polydocs">
+          <a href="https://github.com/statechangelabs/gmsign">
             <FaGithub className="h-6 w-6 mr-2 inline " />
             Source on GitHub
           </a>

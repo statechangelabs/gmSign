@@ -19,9 +19,12 @@ const context = createContext({
   authenticate: async () => true as true | undefined,
 });
 const { Provider } = context;
-const POLYDOCS_BASE =
-  // "https://y86jifedeh.execute-api.us-east-1.amazonaws.com/dev";
-  "https://pjw2w2l1le.execute-api.us-east-1.amazonaws.com/dev";
+const POLYDOCS_BASE = {
+  AWS:
+    // "https://y86jifedeh.execute-api.us-east-1.amazonaws.com/dev";
+    "https://pjw2w2l1le.execute-api.us-east-1.amazonaws.com/dev",
+  XANO: "https://xw8v-tcfi-85ay.n7.xano.io/api:W2GV-aeC",
+};
 const TOKENLIFETIME = 60 * 60 * 1000;
 const ethereum = (window as unknown as { ethereum: any }).ethereum;
 const provider = ethereum
@@ -52,7 +55,7 @@ const Authenticator: FC<{
     const message = JSON.stringify(
       {
         type: "Authenticate me to Polydocs",
-        exp: new Date(Date.now() + 3600000).toISOString(),
+        exp: new Date(Date.now() + TOKENLIFETIME).toISOString(),
       },
       null,
       2
@@ -91,7 +94,7 @@ const Authenticator: FC<{
         <Title />
         <div className="flex flex-row justify-center">
           <button className="btn btn-gradient" onClick={authenticate}>
-            Sign In To Polydocs
+            Sign In To gmSign
           </button>
         </div>
       </div>
@@ -110,16 +113,19 @@ const useAuthToken = () => {
   const { token } = useContext(context);
   return token;
 };
-export const useAuthenticatedFetch = () => {
+export const useAuthenticatedFetch = (
+  key: keyof typeof POLYDOCS_BASE = "XANO"
+) => {
   const token = useAuthToken();
   const { logout } = useAuthenticator();
   return useCallback(
     async (path: string, info: RequestInit = {}) => {
-      const res = await fetch(POLYDOCS_BASE + path, {
+      const res = await fetch(POLYDOCS_BASE[key] + path, {
         ...info,
         headers: {
           ...(info.headers || {}),
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
       //check response status

@@ -75,7 +75,7 @@ const Main: FC = () => {
                     <div className="flex-shrink-0 flex items-center space-x-2">
                       <img src={Logo} alt="Logo" className="w-6" />
                       <span className="text-lg font-bold text-primary-default">
-                        Polydocs
+                        gmSign
                       </span>
                     </div>
                     <div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">

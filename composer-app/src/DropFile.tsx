@@ -97,13 +97,13 @@ export const DropFileBase: FC<{
               />
 
               <a
-                href={`https://ipfs.io/ipfs/${value}`}
+                href={`https://w3s.link/ipfs/${value}`}
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  window.open(`https://ipfs.io/ipfs/${value}`, "_blank");
+                  window.open(`https://w3s.link/ipfs/${value}`, "_blank");
                   return false;
                 }}
                 className="flex text-sm text-blue-600 hover:underline align-center"

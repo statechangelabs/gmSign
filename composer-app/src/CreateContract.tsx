@@ -80,6 +80,7 @@ export const CreateContract: FC = () => {
         royaltyRecipient: "",
         royaltyPercentage: "0.00",
         licenseVersion: "0",
+        background: "",
       }}
       validate={async ({
         name,
@@ -88,6 +89,7 @@ export const CreateContract: FC = () => {
         description,
         thumbnail,
         cover,
+        background,
         chainId,
         royaltyRecipient,
         royaltyPercentage,
@@ -147,12 +149,13 @@ export const CreateContract: FC = () => {
           image: values.thumbnail,
           cover: values.cover,
           tokenDescription: values.tokenDescription,
+          background: values.background,
         };
         const json = JSON.stringify(obj);
         const jsonHash = await upload(json);
         toast("Uploaded metadata to IPFS");
         toast("Submitting", { type: "info" });
-        const res = await fetch("/make-nft-contract", {
+        const res = await fetch("/deploy", {
           method: "POST",
           body: JSON.stringify({
             address: values.owner,
@@ -256,9 +259,9 @@ export const CreateContract: FC = () => {
                         name="tokenDescription"
                         rows={3}
                         className="max-w-lg shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 "
-                        defaultValue={
-                          "Purchasing this token requires accepting our service terms: [POLYDOCS]"
-                        }
+                        // defaultValue={
+                        //   "Purchasing this token requires accepting our service terms: [POLYDOCS]"
+                        // }
                       />
                       <ErrorMessage name="tokenDescription" />
                     </div>
@@ -391,7 +394,7 @@ export const CreateContract: FC = () => {
                       name="description"
                       rows={3}
                       className="max-w-lg shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 "
-                      defaultValue={""}
+                      // defaultValue={""}
                     />
                     <ErrorMessage name="description" />
                   </div>
@@ -412,12 +415,21 @@ export const CreateContract: FC = () => {
 
                 <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-100 sm:pt-5">
                   <label
-                    htmlFor="cover-photo"
+                    htmlFor="cover"
                     className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
                   >
                     Cover Image
                   </label>
                   <DropFile name="cover" onUploading={setIsUploading} />
+                </div>
+                <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-100 sm:pt-5">
+                  <label
+                    htmlFor="background"
+                    className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
+                  >
+                    Cover Image
+                  </label>
+                  <DropFile name="background" onUploading={setIsUploading} />
                 </div>
               </div>
 
