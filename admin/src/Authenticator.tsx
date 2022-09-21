@@ -54,7 +54,7 @@ const Authenticator: FC<{
     const address = await provider.getSigner().getAddress();
     const message = JSON.stringify(
       {
-        type: "Authenticate me to Polydocs",
+        type: "Authenticate me to gmSign",
         exp: new Date(Date.now() + TOKENLIFETIME).toISOString(),
       },
       null,
