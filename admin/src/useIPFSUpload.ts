@@ -10,7 +10,7 @@ export const useUpload = () => {
     const response = await authFetch(ucanPath);
     const json = (await response.json()) as { token: string; did: string };
     cachedToken = json;
-    cachedToken__expires = Date.now() + 1000 * 5 * 60;
+    cachedToken__expires = Date.now() + 1000 * 1 * 60;
     return json;
   }, [authFetch]);
   const uploadBlob = useCallback(
