@@ -31,7 +31,11 @@ const Renderer: FC<{
   chainId: string;
 }> = ({ block, contractAddress, documentId, tokenId, chainId }) => {
   const [isSigned, setIsSigned] = useState(false);
+  const [isSent, setIsSent] = useState(false);
   const myAddress = useAccount();
+  useEffect(() => {
+    setIsSent(false);
+  }, [myAddress]);
   const checkSigned = useCallback(
     async (address: string) => {
       if (!provider) return false;
@@ -148,162 +152,161 @@ const Renderer: FC<{
                 </div>
               </div>
               <div className="p-6 lg:p-8 overflow-x-scroll scrollable">
-                <Formik
-                  initialValues={{
-                    name: "",
-                    email: "",
-                    walletAddress: myAddress,
-                  }}
-                  validate={async (values) => {
-                    const errors: Record<string, string> = {};
-                    if (!values.name) {
-                      errors.name = "Required";
-                    }
-                    if (!values.email) {
-                      errors.email = "Required";
-                    }
-                    if (!validate(values.email)) {
-                      errors.email = "Invalid email";
-                    }
-                    if (!values.walletAddress) {
-                      errors.walletAddress = "Required";
-                    } else if (!ethers.utils.isAddress(values.walletAddress)) {
-                      errors.walletAddress = "Not a valid Ethereum address";
-                    } else {
-                      const signed = await checkSigned(values.walletAddress);
-                      setIsSigned(signed);
-                      if (signed) {
-                        errors.walletAddress =
-                          "Congratulations - this address already signed";
+                {isSigned && (
+                  <div>
+                    YOU RULE! Your address, {myAddress.substring(0, 6)}...
+                    {myAddress.substring(-4, 4)} has already agreed to the Can't
+                    Be Evil License.{" "}
+                    <a href="https://testnets.opensea.io/account?tab=private">
+                      We even have a free NFT in your wallet.
+                    </a>
+                    Check it out!
+                  </div>
+                )}
+                {isSent && (
+                  <div>
+                    An email is on its way so you can sign the license for this
+                    contract - with a free NFT at the end!
+                  </div>
+                )}
+                {!isSent && !isSigned && (
+                  <Formik
+                    initialValues={{
+                      name: "",
+                      email: "",
+                    }}
+                    validate={async (values) => {
+                      const errors: Record<string, string> = {};
+                      if (!values.name) {
+                        errors.name = "Required";
                       }
-                    }
-                    if (Object.keys(errors).length) return errors;
-                  }}
-                  onSubmit={async (values) => {
-                    const response = await fetch(POLYDOCS_URL, {
-                      method: "POST",
-                      body: JSON.stringify({
-                        contractAddress,
-                        chainId,
-                        requesterAddress: values.walletAddress || myAddress,
-                        email: values.email,
-                        name: values.name,
-                      }),
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                    });
-                    if (response.status === 200) {
-                      toast.success("Check your email to accept the terms!");
-                    } else {
-                      toast.error(
-                        "Something went wrong: " + response.statusText
-                      );
-                    }
-                  }}
-                >
-                  {({ dirty, isValid, isSubmitting, values }) => (
-                    <Form>
-                      <div className="space-y-8 divide-y divide-gray-200">
-                        <div className="space-y-8 divide-y divide-gray-200 sm:space-y-5">
-                          <div className="space-y-6 pt-8 sm:space-y-5 sm:pt-10">
-                            <div>
-                              <h3 className="text-lg font-medium leading-6 text-gray-900">
-                                Let's Get Signed
-                              </h3>
-                              <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                                Provide the following information to get your
-                                signable copy of the document in your email.
-                              </p>
-                            </div>
-                            <div className="space-y-6 sm:space-y-5">
-                              <div className="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5">
-                                <label
-                                  htmlFor="first-name"
-                                  className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
-                                >
-                                  Name
-                                </label>
-                                <div className="mt-1 sm:col-span-2 sm:mt-0">
-                                  <Field
-                                    type="text"
-                                    name="name"
-                                    id="name"
-                                    autoComplete="name"
-                                    className="block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:max-w-xs sm:text-sm"
-                                  />
-                                </div>
-                              </div>
-                              <ErrorMessage
-                                name="name"
-                                component="div"
-                                className="text-red-500 font-medium text-xs"
-                              />
-                              <div className="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5">
-                                <label
-                                  htmlFor="last-name"
-                                  className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
-                                >
-                                  Wallet address (0x...)
-                                </label>
-                                <div className="mt-1 sm:col-span-2 sm:mt-0">
-                                  <Field
-                                    type="text"
-                                    name="walletAddress"
-                                    className="block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:max-w-xs sm:text-sm"
-                                  />
-                                </div>
-                              </div>
-                              <ErrorMessage
-                                name="walletAddress"
-                                component="div"
-                                className="text-red-500 font-medium text-xs"
-                              />
+                      if (!values.email) {
+                        errors.email = "Required";
+                      }
+                      if (!validate(values.email)) {
+                        errors.email = "Invalid email";
+                      }
 
-                              <div className="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5">
-                                <label
-                                  htmlFor="email"
-                                  className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
-                                >
-                                  Email address
-                                </label>
-                                <div className="mt-1 sm:col-span-2 sm:mt-0">
-                                  <Field
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    className="block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                  />
-                                </div>
+                      if (Object.keys(errors).length) return errors;
+                    }}
+                    onSubmit={async (values) => {
+                      const response = await fetch(POLYDOCS_URL, {
+                        method: "POST",
+                        body: JSON.stringify({
+                          contractAddress,
+                          chainId,
+                          requesterAddress: myAddress,
+                          email: values.email,
+                          name: values.name,
+                        }),
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                      });
+                      if (response.status === 200) {
+                        toast.success("Check your email to accept the terms!");
+                        setIsSent(true);
+                      } else {
+                        toast.error(
+                          "Something went wrong: " + response.statusText
+                        );
+                      }
+                    }}
+                  >
+                    {({ dirty, isValid, isSubmitting, values }) => (
+                      <Form>
+                        <div className="space-y-8 divide-y divide-gray-200">
+                          <div className="space-y-8 divide-y divide-gray-200 sm:space-y-5">
+                            <div className="space-y-6 pt-8 sm:space-y-5 sm:pt-10">
+                              <div>
+                                <h3 className="text-lg font-medium leading-6 text-gray-900">
+                                  Let's Get Signed
+                                </h3>
+                                <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                                  Provide the following information to get your
+                                  signable copy of the document in your email.
+                                </p>
                               </div>
-                              <ErrorMessage
-                                name="email"
-                                component="div"
-                                className="text-red-500 font-medium text-xs"
-                              />
+                              <div className="space-y-6 sm:space-y-5">
+                                <div className="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5">
+                                  <label
+                                    htmlFor="first-name"
+                                    className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
+                                  >
+                                    Name
+                                  </label>
+                                  <div className="mt-1 sm:col-span-2 sm:mt-0">
+                                    <Field
+                                      type="text"
+                                      name="name"
+                                      id="name"
+                                      autoComplete="name"
+                                      className="block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:max-w-xs sm:text-sm"
+                                    />
+                                  </div>
+                                </div>
+                                <ErrorMessage
+                                  name="name"
+                                  component="div"
+                                  className="text-red-500 font-medium text-xs"
+                                />
+                                <div className="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5">
+                                  <label
+                                    htmlFor="last-name"
+                                    className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
+                                  >
+                                    Wallet address (0x...)
+                                  </label>
+                                  <div className="mt-1 sm:col-span-2 sm:mt-0">
+                                    {myAddress}
+                                  </div>
+                                </div>
+
+                                <div className="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5">
+                                  <label
+                                    htmlFor="email"
+                                    className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
+                                  >
+                                    Email address
+                                  </label>
+                                  <div className="mt-1 sm:col-span-2 sm:mt-0">
+                                    <Field
+                                      id="email"
+                                      name="email"
+                                      type="email"
+                                      autoComplete="email"
+                                      className="block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    />
+                                  </div>
+                                </div>
+                                <ErrorMessage
+                                  name="email"
+                                  component="div"
+                                  className="text-red-500 font-medium text-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="pt-5">
+                            <div className="flex justify-end">
+                              <button
+                                disabled={!dirty || !isValid || isSubmitting}
+                                type="submit"
+                                className={
+                                  !dirty || !isValid || isSubmitting
+                                    ? "ml-3 inline-flex justify-center rounded-md border border-transparent bg-gray-600 py-2 px-4 text-sm font-medium text-white shadow-sm focus:outline-none"
+                                    : "ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                }
+                              >
+                                I Want To Sign
+                              </button>
                             </div>
                           </div>
                         </div>
-                        <div className="pt-5">
-                          <div className="flex justify-end">
-                            <button
-                              disabled={!dirty || !isValid || isSubmitting}
-                              type="submit"
-                              className={
-                                !dirty || !isValid || isSubmitting
-                                  ? "ml-3 inline-flex justify-center rounded-md border border-transparent bg-gray-600 py-2 px-4 text-sm font-medium text-white shadow-sm focus:outline-none"
-                                  : "ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                              }
-                            >
-                              Save
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </Form>
-                  )}
-                </Formik>
+                      </Form>
+                    )}
+                  </Formik>
+                )}
               </div>
             </div>
           </div>
