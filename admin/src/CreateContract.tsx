@@ -113,7 +113,6 @@ export const CreateContract: FC = () => {
           errors["tokenDescription"] =
             "Description is Required and must include [POLYDOCS]";
         } else {
-          console.log("description is ok", description);
         }
         if (!supportedChains.find((c) => c.chainId.toString() === chainId)) {
           isError = true;
@@ -138,7 +137,6 @@ export const CreateContract: FC = () => {
           errors["royaltyPercentage"] =
             "Royalty Percentage must be between 0 and 100, with up to two decimal places (basis points)";
         }
-        console.log("Error situation post-validation", isError, errors);
         if (isError) return errors;
       }}
       onSubmit={async (values) => {
@@ -152,28 +150,42 @@ export const CreateContract: FC = () => {
           background: values.background,
         };
         const json = JSON.stringify(obj);
-        const jsonHash = await upload(json);
-        toast("Uploaded metadata to IPFS");
-        toast("Submitting", { type: "info" });
-        const res = await fetch("/deploy", {
-          method: "POST",
-          body: JSON.stringify({
-            address: values.owner,
-            name: values.name,
-            symbol: values.symbol,
-            uri: "ipfs://" + jsonHash,
-            chainId: values.chainId,
-            royaltyRecipient: values.royaltyRecipient,
-            royaltyPercentage: values.royaltyPercentage,
-            licenseVersion: values.licenseVersion,
-          }),
-        });
-        // const { id } = await res.json();
-        if (res.status === 200) {
-          toast("Contract Created", { type: "success" });
-          navigate(`/`);
-        } else {
-          toast("Error creating contract", { type: "error" });
+        const uploadToast = toast("Uploading metadata to IPFS");
+        try {
+          const jsonHash = await upload(json);
+          toast.dismiss(uploadToast);
+          const toastId = toast("Submitting", {
+            type: "info",
+            autoClose: 25000,
+          });
+          const res = await fetch("/deploy", {
+            method: "POST",
+            body: JSON.stringify({
+              address: values.owner,
+              name: values.name,
+              symbol: values.symbol,
+              uri: "ipfs://" + jsonHash,
+              chainId: values.chainId,
+              royaltyRecipient: values.royaltyRecipient,
+              royaltyPercentage: values.royaltyPercentage,
+              licenseVersion: values.licenseVersion,
+            }),
+          });
+          toast.dismiss(toastId);
+          const output = await res.json();
+          const { contractId } = output;
+          console.log("All the json was", output);
+          if (res.status === 200) {
+            toast("Contract Created", { type: "success" });
+            const target = `/contracts/${contractId}`;
+            console.log("navigating to ", target);
+            navigate(target);
+          } else {
+            toast("Error creating contract", { type: "error" });
+          }
+        } catch (e) {
+          toast.dismiss(uploadToast);
+          toast.error("Problem uploading: try refreshing the browser tab");
         }
       }}
     >

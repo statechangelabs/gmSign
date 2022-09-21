@@ -49,9 +49,9 @@ const ErrorMessage: FC<{ name: string }> = ({ name }) => {
 
 const ContractEditor: FC = () => {
   const { setTitle } = useMain();
-  useEffect(() => {
-    setTitle("");
-  }, [setTitle]);
+  // useEffect(() => {
+  //   setTitle("Manage Contract");
+  // }, [setTitle]);
   const navigate = useNavigate();
   const { contractId } = useParams();
   const [chainId, contractAddress] = (contractId || "").split("::");
@@ -252,7 +252,10 @@ const ContractEditor: FC = () => {
 const Contract: FC = () => {
   const { setTitle } = useMain();
   useEffect(() => {
-    setTitle("");
+    setTitle("Manage Contract");
+    setTimeout(() => {
+      setTitle("Manage Contract");
+    }, 1000);
   }, [setTitle]);
   const navigate = useNavigate();
   const { contractId } = useParams();
@@ -303,7 +306,7 @@ const Contract: FC = () => {
           </div>
         </div>
       </div>
-      <Tokens />
+      {/* <Tokens /> */}
       <ContractEditor />
     </div>
   );
