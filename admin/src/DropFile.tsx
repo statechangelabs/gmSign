@@ -1,8 +1,7 @@
 import { CloudUploadIcon } from "@heroicons/react/outline";
-import { useFormikContext, Field } from "formik";
+import { useFormikContext } from "formik";
 import { FC, useEffect, useState, useCallback, Fragment } from "react";
 import { useDropzone } from "react-dropzone";
-import { useMain } from "./Main";
 import { useIPFSDataUri } from "./useIPFS";
 import { useUpload } from "./useIPFSUpload";
 
@@ -34,10 +33,6 @@ export const DropFileBase: FC<{
   onUploading?: (isUploading: boolean) => void;
   onUploaded?: (file: File, cid: string) => void;
 }> = ({ name, value, onUploading = () => {}, onUploaded = () => {} }) => {
-  const { setTitle } = useMain();
-  useEffect(() => {
-    setTitle("Create a Contract");
-  }, [setTitle]);
   const [isUploading, setIsUploading] = useState(false);
   const { uploadBlob } = useUpload();
   const onDrop = useCallback(

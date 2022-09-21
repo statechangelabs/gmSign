@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { DropFile } from "./DropFile";
 import { useUpload } from "./useIPFSUpload";
+import { useMain } from "./Main";
 const supportedChains = [
   // { chainId: 137, name: "Polygon Mainnet" },
   { chainId: 80001, name: "Polygon Mumbai Testnet" },
@@ -25,6 +26,10 @@ const ErrorMessage: FC<{ name: string }> = ({ name }) => {
   );
 };
 export const CreateContract: FC = () => {
+  const { setTitle } = useMain();
+  useEffect(() => {
+    setTitle("Create a Contract");
+  }, [setTitle]);
   const address = useAddress();
   const [isUploading, setIsUploading] = useState(false);
   const fetch = useAuthenticatedFetch();
