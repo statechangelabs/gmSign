@@ -128,3 +128,4 @@ dist
 api/contracts
 api/deployArgs.json
 .webpack
+.DS_Store
