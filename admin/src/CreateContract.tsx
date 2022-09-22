@@ -4,7 +4,7 @@ import {
   Form,
   Formik,
 } from "formik";
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { useAddress, useAuthenticatedFetch } from "./Authenticator";
 import { ethers } from "ethers";
 import { toast } from "react-toastify";
