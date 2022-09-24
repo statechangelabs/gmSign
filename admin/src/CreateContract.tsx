@@ -150,6 +150,18 @@ export const CreateContract: FC = () => {
           isError = true;
           errors["thumbnail"] = "Image is Required";
         }
+        if (!cover) {
+          isError = true;
+          errors["cover"] = "Cover Image is Required";
+        }
+        if (!title) {
+          isError = true;
+          errors["title"] = "Short Description is Required";
+        }
+        if (!description) {
+          isError = true;
+          errors["description"] = "Long Description is Required";
+        }
         if (isError) return errors;
       }}
       onSubmit={async (values) => {
@@ -383,7 +395,7 @@ export const CreateContract: FC = () => {
                     htmlFor="title"
                     className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
                   >
-                    Short Description
+                    Short Description <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-1 sm:mt-0 sm:col-span-2">
                     <div className="max-w-lg flex  shadow-sm">
@@ -407,7 +419,7 @@ export const CreateContract: FC = () => {
                     htmlFor="description"
                     className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
                   >
-                    Longer Description
+                    Longer Description <span className="text-red-500">*</span>
                     <p className="mt-2 text-xs opacity-50">
                       Longer description of the contract
                     </p>
@@ -614,7 +626,9 @@ export const CreateContract: FC = () => {
                   type="submit"
                   className="btn btn-primary"
                 >
-                  {isSubmitting ? "Sending..." : "Make NFT Contract"}
+                  {isSubmitting
+                    ? "Deploying Smart Contract..."
+                    : "Make NFT Contract"}
                 </button>
               </div>
             </div>
