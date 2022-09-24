@@ -142,6 +142,14 @@ export const CreateContract: FC = () => {
           errors["royaltyPercentage"] =
             "Royalty Percentage must be between 0 and 100, with up to two decimal places (basis points)";
         }
+        if (!background) {
+          isError = true;
+          errors["background"] = "Background is Required";
+        }
+        if (!thumbnail) {
+          isError = true;
+          errors["thumbnail"] = "Image is Required";
+        }
         if (isError) return errors;
       }}
       onSubmit={async (values) => {
@@ -427,6 +435,7 @@ export const CreateContract: FC = () => {
                     <div className="flex items-center">
                       <DropFile name="thumbnail" onUploading={setIsUploading} />
                     </div>
+                    <ErrorMessage name="thumbnail" />
                   </div>
                 </div>
 
@@ -437,7 +446,10 @@ export const CreateContract: FC = () => {
                   >
                     Cover Image
                   </label>
-                  <DropFile name="cover" onUploading={setIsUploading} />
+                  <div className="flex items-center">
+                    <DropFile name="cover" onUploading={setIsUploading} />
+                  </div>
+                  <ErrorMessage name="cover" />
                 </div>
                 <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-100 sm:pt-5">
                   <label
@@ -446,7 +458,10 @@ export const CreateContract: FC = () => {
                   >
                     Cover Image
                   </label>
-                  <DropFile name="background" onUploading={setIsUploading} />
+                  <div className="flex items-center">
+                    <DropFile name="background" onUploading={setIsUploading} />
+                  </div>
+                  <ErrorMessage name="background" />
                 </div>
               </div>
 

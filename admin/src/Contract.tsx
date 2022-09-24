@@ -169,7 +169,7 @@ const ContractEditor: FC = () => {
                       className="block text-sm font-medium text-gray-700"
                     >
                       Thumbnail/logo image for the contract
-                      {values.image && (
+                      {/* {values.image && (
                         <button
                           className="btn btn-gradient block"
                           type="button"
@@ -179,7 +179,7 @@ const ContractEditor: FC = () => {
                         >
                           Clear
                         </button>
-                      )}
+                      )} */}
                     </label>
                     <div className="mt-1 sm:mt-0 sm:col-span-2">
                       <div className="flex items-center">
@@ -194,7 +194,7 @@ const ContractEditor: FC = () => {
                       className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
                     >
                       Cover Image
-                      {values.cover && (
+                      {/* {values.cover && (
                         <button
                           className="btn btn-gradient block"
                           type="button"
@@ -204,7 +204,7 @@ const ContractEditor: FC = () => {
                         >
                           Clear
                         </button>
-                      )}
+                      )} */}
                     </label>
                     <DropFile name="cover" onUploading={setIsUploading} />
                   </div>
@@ -214,7 +214,7 @@ const ContractEditor: FC = () => {
                       className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
                     >
                       Background Image
-                      {values.background && (
+                      {/* {values.background && (
                         <button
                           className="btn btn-gradient block"
                           type="button"
@@ -224,7 +224,7 @@ const ContractEditor: FC = () => {
                         >
                           Clear
                         </button>
-                      )}
+                      )} */}
                     </label>
                     <DropFile name="background" onUploading={setIsUploading} />
                   </div>
