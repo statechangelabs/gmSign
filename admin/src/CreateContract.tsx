@@ -429,7 +429,8 @@ export const CreateContract: FC = () => {
                     htmlFor="thumbnail"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Thumbnail/logo image for the contract
+                    Thumbnail/logo image for the contract{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-1 sm:mt-0 sm:col-span-2">
                     <div className="flex items-center">
@@ -456,7 +457,7 @@ export const CreateContract: FC = () => {
                     htmlFor="background"
                     className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
                   >
-                    Cover Image
+                    Background Image <span className="text-red-500">*</span>
                   </label>
                   <div className="flex items-center">
                     <DropFile name="background" onUploading={setIsUploading} />
