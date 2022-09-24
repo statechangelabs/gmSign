@@ -431,12 +431,12 @@ export const CreateContract: FC = () => {
                   >
                     Thumbnail/logo image for the contract{" "}
                     <span className="text-red-500">*</span>
+                    <ErrorMessage name="thumbnail" />
                   </label>
                   <div className="mt-1 sm:mt-0 sm:col-span-2">
                     <div className="flex items-center">
                       <DropFile name="thumbnail" onUploading={setIsUploading} />
                     </div>
-                    <ErrorMessage name="thumbnail" />
                   </div>
                 </div>
 
@@ -446,11 +446,11 @@ export const CreateContract: FC = () => {
                     className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
                   >
                     Cover Image
+                    <ErrorMessage name="cover" />
                   </label>
                   <div className="flex items-center">
                     <DropFile name="cover" onUploading={setIsUploading} />
                   </div>
-                  <ErrorMessage name="cover" />
                 </div>
                 <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-100 sm:pt-5">
                   <label
@@ -458,11 +458,11 @@ export const CreateContract: FC = () => {
                     className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"
                   >
                     Background Image <span className="text-red-500">*</span>
+                    <ErrorMessage name="background" />
                   </label>
                   <div className="flex items-center">
                     <DropFile name="background" onUploading={setIsUploading} />
                   </div>
-                  <ErrorMessage name="background" />
                 </div>
               </div>
 
