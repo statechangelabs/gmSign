@@ -614,7 +614,7 @@ export const CreateContract: FC = () => {
                   type="submit"
                   className="btn btn-primary"
                 >
-                  {isSubmitting ? "Sending..." : "Save"}
+                  {isSubmitting ? "Sending..." : "Make NFT Contract"}
                 </button>
               </div>
             </div>
