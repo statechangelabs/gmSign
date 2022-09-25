@@ -152,7 +152,7 @@ const Home: FC = () => {
             </ol>
           </div>
         )}
-        <ContractFinder refresh={refresh} />
+        {/* <ContractFinder refresh={refresh} /> */}
       </div>
     </div>
   );
