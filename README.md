@@ -6,7 +6,7 @@ Smart contracts are increasingly used for managing the allocation of digital ass
 
 These agreements need to be clear, binding, and reside where they do business - on the decentralized web.
 
-gmSign connects Hellodocs with decentralized applications by enabling signatures over the HelloSign API which, on callback, makes a gasless record of that signature on-chain so that there is clarity as to who signed which agreement when.
+gmSign connects HelloSign with decentralized applications by enabling signatures over the HelloSign API which, on callback, makes a gasless record of that signature on-chain so that there is clarity as to who signed which agreement when.
 ## What it does
 
 Our implementation of gmSign has three parts.
@@ -22,7 +22,7 @@ Third, we created an administrative application at https://admin.gmsign.xyz to l
 Finally, we distribute the code of the smart contract we used as a public good so other people can stack on top of it or modify in a way that helps them reduce their intellectual property and compliance risks on the decentralized web. 
 ## How we built it
 
-Our first mission was to bring Hellosign to Web3. We connected with a Polygon blockchain using Ethers.js and added code to connect Hellpsign.
+Our first mission was to bring Hellosign to Web3. We connected with a Polygon blockchain using Ethers.js and added code to connect Hellosign.
 
 We originally built using a serverless back-end on NodeJS and the 6.0 version of the HelloSign SDK. 
 
